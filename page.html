@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bus Route Guessing Game</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>
+  <style>
+    #map { height: 400px; }
+    .controls { margin: 20px; }
+    button { margin: 5px; }
+  </style>
+</head>
+<body>
+  <h1>Guess the Bus Route</h1>
+  <div id="map"></div>
+  <div class="controls">
+    <p id="question">Guess the route number:</p>
+    <div id="options"></div>
+    <p id="feedback"></p>
+  </div>
+  <script src="game.js"></script>
+</body>
+</html>
