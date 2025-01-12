@@ -1,4 +1,5 @@
-let routesData = [];
+let routesData = {};
+const NUM_OPTIONS = 6
 
 // Initialize Map
 const map = L.map('map').setView([37.7749, -122.4194], 13);
@@ -15,17 +16,19 @@ fetch('ACTransit/shapes.json')
 
 // Start Game
 function startGame() {
-  const [routeOptions, routeAnswer] = getRandomOptionsAndGoalAnswer();
+  const [routeOptions, routeAnswer] = getRandomOptionsAndGoalAnswer(routesData, NUM_OPTIONS);
   console.log(`Options for today: ${routeOptions}`);
-  displayRoute(randomRoute.shape);
-  displayOptions(randomRoute.route_number);
+  console.log(`Answer for today: ${routeAnswer}`);
+
+  displayRoute(routesData[routeAnswer]);
+  displayOptions(routeOptions);
 }
 
 // Get Random Routes
 function getRandomOptionsAndGoalAnswer(data, numOptions) {
   const seed = getSeedFromDate();
-  var rng = Math.seedrandom(seed); // Seed the random generator
-  const shuffled = [...data].sort(() => rng.int32()); // Shuffle deterministically
+  var rng = new Math.seedrandom(seed); // Seed the random generator
+  const shuffled = [...Object.keys(data)].sort(() => rng.int32()); // Shuffle deterministically
   options = shuffled.slice(0, numOptions); // Select the first N options
 
   goalIndex = Math.floor(rng() * numOptions)
@@ -39,11 +42,37 @@ function getSeedFromDate() {
 }
 
 // Display Route on Map
-function displayRoute(shape) {
+function displayRoute(routeShapeDict) {
   if (currentLayer) {
     map.removeLayer(currentLayer);
   }
+  const shape = coordsToGeoJsonDict(routeShapeDict.lats, routeShapeDict.lons)
+  console.log(shape);
   currentLayer = L.geoJSON(shape).addTo(map);
+}
+
+function coordsToGeoJsonDict(lats, lons) {
+  // Combine latitude and longitude into coordinates
+  const coordinates = zip(lons, lats);  // GeoJSON uses lon/lat not lat/lon
+
+  // Create a GeoJSON LineString
+  return geojsonLineString = {
+    type: "FeatureCollection",
+    features: [
+      {
+        type: "Feature",
+        geometry: {
+          type: "LineString",
+          coordinates: coordinates,
+        },
+        properties: {} // Add any properties you want here
+      }
+    ]
+  };
+}
+
+function zip(arr1, arr2) {
+  return arr1.map((item, index) => [item, arr2[index]]);
 }
 
 // Display Options
@@ -51,32 +80,14 @@ function displayOptions(correctAnswer) {
   const optionsDiv = document.getElementById('options');
   optionsDiv.innerHTML = '';
 
-  const shuffledOptions = shuffleOptions([correctAnswer, ...generateFakeOptions(correctAnswer)]);
-
-  shuffledOptions.forEach(option => {
-    const button = document.createElement('button');
-    button.innerText = option;
-    button.onclick = () => checkAnswer(option, correctAnswer);
-    optionsDiv.appendChild(button);
-  });
+  // shuffledOptions.forEach(option => {
+  //   const button = document.createElement('button');
+  //   button.innerText = option;
+  //   button.onclick = () => checkAnswer(option, correctAnswer);
+  //   optionsDiv.appendChild(button);
+  // });
 }
 
-// Generate Fake Options
-function generateFakeOptions(correctAnswer) {
-  const fakeOptions = [];
-  while (fakeOptions.length < 3) {
-    const fake = Math.floor(Math.random() * 50) + 1; // Random route numbers 1-50
-    if (fake !== correctAnswer && !fakeOptions.includes(fake)) {
-      fakeOptions.push(fake.toString());
-    }
-  }
-  return fakeOptions;
-}
-
-// Shuffle Options
-function shuffleOptions(options) {
-  return options.sort(() => Math.random() - 0.5);
-}
 
 // Check Answer
 function checkAnswer(selected, correct) {
