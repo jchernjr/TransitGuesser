@@ -9,14 +9,17 @@ class RouteMapGame {
     this.routeData = routesData; // Dict of route objects
 
     // TODO: center the map on the routes
+
+    // Keep track of which routes are selected (maps to 'layer' plotted on mapbox)
+    this.selectedRouteKeys = {}
   }
 
   getRouteOptions() {
     throw new Error("getRouteOptions must be implemented by subclass");
   }
 
-  selectRoute(route) {
-    throw new Error("selectRoute must be implemented by subclass");
+  onRouteOptionClicked(routeKey) {
+    throw new Error("onRouteOptionClicked must be implemented by subclass");
   }
 
   plotRoutes() {
@@ -52,7 +55,7 @@ class GameMode extends RouteMapGame {
     return today.split('-').join(''); // Convert to a number-like string, e.g., 20250103
   }
 
-  selectRoute(route) {
+  onRouteOptionClicked(routeKey) {
     // Allow selecting one new route at a time
     console.log(`Selected route: ${route.name}`);
 
@@ -85,15 +88,22 @@ class ViewerMode extends RouteMapGame {
     return [Object.keys(this.routeData), null];
   }
 
-  selectRoute(route) {
-    // Allow selecting multiple routes
-    console.log(`Selected route: ${route.name}`);
+  onRouteOptionClicked(routeKey) {
+    // Allow selecting (or deselecting) one additional route at a time.
+    console.log(`Clicked route: ${routeKey}`);
 
-    // TODO: keep track of what was already selected
-    // TODO: be able to de-select routes to remove from map
-
-    // Plot the selected route on the map
-    this.plotRoutes([route]);
+    if (routeKey in this.selectedRouteKeys) {
+      // Already selected: deselect and remove from map
+      var layer = this.selectedRouteKeys[routeKey]
+      delete this.selectedRouteKeys[routeKey]
+      this.map.removeLayer(layer);
+    } else {
+      // Not yet selected: add
+      var routeShapeDict = this.routeData[routeKey];
+      var shape = coordsToGeoJsonDict(routeShapeDict.lats, routeShapeDict.lons);
+      var layer = L.geoJSON(shape).addTo(map);
+      this.selectedRouteKeys[routeKey] = layer;
+    }
   }
 
   plotRoutes(routes) {
@@ -134,15 +144,6 @@ function startGame() {
 }
 
 // Display Route on Map
-function displayRoute(routeShapeDict) {
-  if (currentLayer) {
-    map.removeLayer(currentLayer);
-  }
-  const shape = coordsToGeoJsonDict(routeShapeDict.lats, routeShapeDict.lons)
-  console.log(shape);
-  currentLayer = L.geoJSON(shape).addTo(map);
-}
-
 function coordsToGeoJsonDict(lats, lons) {
   // Combine latitude and longitude into coordinates
   const coordinates = zip(lons, lats);  // GeoJSON uses lon/lat not lat/lon
@@ -168,16 +169,17 @@ function zip(arr1, arr2) {
 }
 
 // Display Options
-function displayOptions(correctAnswer) {
+function displayOptions(routeOptions) {
+  // routeOptions should be list of available route keys for choosing
   const optionsDiv = document.getElementById('options');
   optionsDiv.innerHTML = '';
 
-  // shuffledOptions.forEach(option => {
-  //   const button = document.createElement('button');
-  //   button.innerText = option;
-  //   button.onclick = () => checkAnswer(option, correctAnswer);
-  //   optionsDiv.appendChild(button);
-  // });
+  routeOptions.forEach(routeKey => {
+    const button = document.createElement('button');
+    button.innerText = routeKey;
+    button.onclick = () => mode.onRouteOptionClicked(routeKey);
+    optionsDiv.appendChild(button);
+  });
 }
 
 
