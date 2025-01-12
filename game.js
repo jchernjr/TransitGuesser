@@ -117,7 +117,7 @@ class ViewerMode extends RouteMapGame {
 
 
 // Initialize Map
-const map = L.map('map').setView([37.7749, -122.4194], 13);
+const map = L.map('map').setView([37.7615,-122.2324], 11);
 let currentLayer = null;
 
 // Choose game mode
